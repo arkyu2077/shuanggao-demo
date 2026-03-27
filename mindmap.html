@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 报销助手 - 场景思维导图</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif;background:#F5F7FA;color:#1A1A1A;padding:20px}
+  h1{text-align:center;font-size:22px;margin-bottom:6px;color:#006EFF}
+  .subtitle{text-align:center;font-size:13px;color:#8C8C8C;margin-bottom:24px}
+  .grid{display:flex;flex-direction:column;gap:20px;max-width:1200px;margin:0 auto}
+  .card{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden}
+  .card-header{padding:14px 20px;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .card-header .num{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:13px}
+  .card-body{padding:16px 20px;overflow-x:auto}
+  .c1 .card-header{background:linear-gradient(135deg,#00B578,#00A36C)}
+  .c2 .card-header{background:linear-gradient(135deg,#FF8F1F,#E67E00)}
+  .c3 .card-header{background:linear-gradient(135deg,#FA5151,#E03E3E)}
+  .c4 .card-header{background:linear-gradient(135deg,#EA580C,#D14E00)}
+  .c5 .card-header{background:linear-gradient(135deg,#006EFF,#0052CC)}
+  .c6 .card-header{background:linear-gradient(135deg,#7C3AED,#6D28D9)}
+  .c7 .card-header{background:linear-gradient(135deg,#0891B2,#0E7490)}
+
+  /* Mind map styles */
+  .mind{display:flex;align-items:stretch;gap:0;min-width:max-content;padding:10px 0}
+  .mind-root{background:#1A1A1A;color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:700;display:flex;align-items:center;white-space:nowrap;align-self:center;min-height:44px}
+  .mind-branches{display:flex;flex-direction:column;gap:3px;position:relative;padding-left:0}
+  .mind-branches::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:#DDD}
+  .mind-branch{display:flex;align-items:stretch;gap:0}
+  .mind-conn{width:24px;display:flex;align-items:center;position:relative}
+  .mind-conn::after{content:'';position:absolute;left:0;top:50%;width:24px;height:2px;background:#DDD}
+  .mind-node{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:5px;border:2px solid;min-height:34px}
+  .mind-children{display:flex;flex-direction:column;gap:2px;position:relative;padding-left:0}
+  .mind-children::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:#E8E8E8}
+  .mind-child{display:flex;align-items:stretch}
+  .mind-cconn{width:18px;display:flex;align-items:center;position:relative}
+  .mind-cconn::after{content:'';position:absolute;left:0;top:50%;width:18px;height:2px;background:#E8E8E8}
+  .mind-leaf{padding:5px 10px;border-radius:6px;font-size:11px;white-space:nowrap;display:flex;align-items:center;gap:4px;background:#F5F7FA;color:#555;border:1px solid #E8E8E8;min-height:28px}
+  .mind-leaf.act{background:#E8FFF3;border-color:#00B578;color:#065F46}
+  .mind-leaf.warn{background:#FFF7E8;border-color:#FF8F1F;color:#7A4500}
+  .mind-leaf.err{background:#FFF0F0;border-color:#FA5151;color:#A11}
+  .mind-leaf.info{background:#E8F1FF;border-color:#006EFF;color:#003D99}
+  .mind-leaf.pur{background:#F3E8FF;border-color:#7C3AED;color:#5B21B6}
+
+  .root-conn{width:28px;display:flex;align-items:center;position:relative}
+  .root-conn::after{content:'';position:absolute;left:0;top:50%;width:28px;height:2px;background:#999}
+
+  /* Color variants for nodes */
+  .n-green{border-color:#00B578;background:#E8FFF3;color:#065F46}
+  .n-orange{border-color:#FF8F1F;background:#FFF7E8;color:#7A4500}
+  .n-red{border-color:#FA5151;background:#FFF0F0;color:#991B1B}
+  .n-blue{border-color:#006EFF;background:#E8F1FF;color:#003D99}
+  .n-purple{border-color:#7C3AED;background:#F3E8FF;color:#5B21B6}
+  .n-cyan{border-color:#0891B2;background:#E0F7FA;color:#0E7490}
+  .n-gray{border-color:#999;background:#F5F5F5;color:#555}
+
+  .adp-tag{font-size:9px;padding:1px 4px;border-radius:2px;background:rgba(0,0,0,.08);color:rgba(0,0,0,.5);font-family:monospace;margin-left:2px}
+
+  @media(max-width:768px){
+    .card-body{padding:12px}
+    .mind{transform:scale(0.85);transform-origin:left center}
+  }
+</style>
+</head>
+<body>
+
+<h1>🤖 AI 报销助手 — 场景思维导图</h1>
+<p class="subtitle">7 个核心场景的完整交互流程 · 标注 ADP 节点映射</p>
+
+<div class="grid">
+
+<!-- ===== S1 ===== -->
+<div class="card c1">
+  <div class="card-header"><div class="num">1</div>批量顺畅 — 3 张交通票 → 全识别 → 可编辑表格 → 一键确认</div>
+  <div class="card-body">
+    <div class="mind">
+      <div class="mind-root">场景一<br>批量顺畅</div>
+      <div class="root-conn"></div>
+      <div class="mind-branches">
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-green">📎 用户上传 <span class="adp-tag">文件收集</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">出租车发票.jpg</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">地铁充值发票.jpg</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">停车费发票.jpg</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-blue">🔍 AI 批量识别 <span class="adp-tag">循环·OCR</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">逐张 OCR 文字提取</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">LLM 结构化字段识别</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">全部置信度 98%+</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-green">📋 可编辑表格 <span class="adp-tag">Widget</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">3 行明细（类别/描述/日期/金额）</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">所有字段可直接编辑</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">合计 ¥148.00</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-gray">👤 用户操作</div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">✓ 确认提交 → 生成报销单</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">✎ 修改字段 → 更新后再确认</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-green">✅ 提交成功 <span class="adp-tag">工具节点·ERP</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">EXP-2026031801</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">张明 → 李经理 → 财务部</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== S2 ===== -->
+<div class="card c2">
+  <div class="card-header"><div class="num">2</div>混合票据 — 3 张不同类型 → 1 张需内联补充 → 合并确认</div>
+  <div class="card-body">
+    <div class="mind">
+      <div class="mind-root">场景二<br>混合票据</div>
+      <div class="root-conn"></div>
+      <div class="mind-branches">
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-orange">📎 上传 3 张 <span class="adp-tag">文件收集</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">出租车 → ✅ 完整</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf warn">餐饮发票 → ⏳ 缺字段</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">酒店发票 → ✅ 完整</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-blue">🔍 AI 识别 + 分析 <span class="adp-tag">条件分支</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">第 1、3 项：字段完整</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf warn">第 2 项：缺事由/人数/客户公司</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-orange">📋 可编辑表格 <span class="adp-tag">Widget·Form</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">第 1、3 行：已填好，可编辑</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf warn">第 2 行展开内联补充区</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">↳ 事由（下拉）/ 人数（下拉）/ 公司（输入）</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-gray">👤 用户在表格内一次性填完</div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">所有字段填好 → 点击提交</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-green">✅ 提交 <span class="adp-tag">工具节点</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">合计 ¥1,359</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf warn">招待费 > ¥500 → 自动抄送总监</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== S3 ===== -->
+<div class="card c3">
+  <div class="card-header"><div class="num">3</div>审批驳回 — 查询单号 → 3 项中 1 项被驳回 → 内联修改 → 重提</div>
+  <div class="card-body">
+    <div class="mind">
+      <div class="mind-root">场景三<br>审批驳回</div>
+      <div class="root-conn"></div>
+      <div class="mind-branches">
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-gray">👤 用户输入报销单号 <span class="adp-tag">参数提取</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf info">无法主动推送（ADP限制）</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">用户主动查询 EXP-2026031501</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-blue">🔍 查询状态 <span class="adp-tag">数据库节点</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf err">状态 = 已驳回</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf err">驳回人：李经理</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-red">📋 展示问题 + 可编辑表格 <span class="adp-tag">Widget</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">第 1 项出租车 → ✅ 已通过</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf err">第 2 项包车费 → ❌ 红色高亮</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">↳ 内联修改区：类别(下拉)/原因(下拉)/说明(输入)</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">第 3 项住宿 → ✅ 已通过</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-gray">👤 在表格内直接改完 → 一键重提</div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">仅第 2 项重新审核</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">第 1、3 项保持原通过状态</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== S4 ===== -->
+<div class="card c4">
+  <div class="card-header"><div class="num">4</div>合规预警 — 3 张票据 → 其中 1 张超标 → 行内选处理方案</div>
+  <div class="card-body">
+    <div class="mind">
+      <div class="mind-root">场景四<br>合规预警</div>
+      <div class="root-conn"></div>
+      <div class="mind-branches">
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-green">📎 上传 3 张 <span class="adp-tag">文件收集</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">出租车 + 餐饮 + 酒店</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-blue">🔍 识别 + 合规校验 <span class="adp-tag">代码节点</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">第 1、3 项 → ✅ 合规</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf warn">第 2 项餐饮 ¥2,380 → ⚠️ 超标</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">↳ 人均 ¥396 > 标准 ¥300</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-orange">📋 表格 + 行内选方案 <span class="adp-tag">Widget</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">第 2 行展开超标处理区</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf warn">A. 填理由 → 触发总监审批</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">B. 修正人数 8 人 → 合规</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf info">C. 拆分 → 公司¥1800 + 个人¥580</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-gray">👤 选方案 → 补充 → 提交</div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">下拉选择后动态显示对应补充字段</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">一键提交（含处理方案）</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== S5 ===== -->
+<div class="card c5">
+  <div class="card-header"><div class="num">5</div>重复检测 — 3 张票据 → 其中 1 张重复 → 行内选操作</div>
+  <div class="card-body">
+    <div class="mind">
+      <div class="mind-root">场景五<br>重复检测</div>
+      <div class="root-conn"></div>
+      <div class="mind-branches">
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-blue">📎 上传 3 张 <span class="adp-tag">文件收集</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">出租车 + 酒店 + 地铁</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-blue">🔍 识别 + 历史比对 <span class="adp-tag">数据库·比对</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">第 1、3 项 → ✅ 无重复</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf warn">第 2 项酒店 → 🔁 与 EXP-031002 匹配</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">↳ 发票号/金额/日期/商户 全一致</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-blue">📋 表格 + 行内操作 <span class="adp-tag">Widget</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">第 2 行展开重复处理区</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf err">删除此项（确实重复）→ 仅提交 1、3</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">保留（不是重复）→ 填说明后全提交</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== S6 ===== -->
+<div class="card c6">
+  <div class="card-header"><div class="num">6</div>审后追回 — 查询 → 4 项中 2 项追回 → 行内补材料+修改</div>
+  <div class="card-body">
+    <div class="mind">
+      <div class="mind-root">场景六<br>审后追回</div>
+      <div class="root-conn"></div>
+      <div class="mind-branches">
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-gray">👤 输入单号查询 <span class="adp-tag">参数提取</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">EXP-2026030801</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-purple">🔍 查询 → 部分追回 <span class="adp-tag">数据库</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">第 1 出租车 · 第 3 餐饮 → ✅ 通过</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf pur">第 2 住宿 → ↩ 追回：发票抬头错</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf pur">第 4 住宿 → ↩ 追回：缺水单</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-purple">📋 表格 + 行内修正 <span class="adp-tag">Widget</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">第 2 行：处理方式(下拉) + 上传新发票(按钮)</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">第 4 行：上传水单(按钮)</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">上传后按钮变 ✅ 已上传</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-green">✅ 全部修正 → 重提 <span class="adp-tag">工具节点</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">仅第 2、4 项重新审核</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">第 1、3 保持通过</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== S7 ===== -->
+<div class="card c7">
+  <div class="card-header"><div class="num">7</div>多次积攒 — 8 张票据 → AI 按行程自动分 3 张报销单</div>
+  <div class="card-body">
+    <div class="mind">
+      <div class="mind-root">场景七<br>多次积攒</div>
+      <div class="root-conn"></div>
+      <div class="mind-branches">
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-cyan">📎 一次上传 8 张 <span class="adp-tag">文件收集×8</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">跨 3 个不同时间/地点的出差</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">票据混在一起上传</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-blue">🔍 AI 识别 + 智能分组 <span class="adp-tag">LLM·分组</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">逐张 OCR 识别</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf info">LLM 分析日期 + 地点 + 消费类型</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf info">自动聚类为 3 组</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-cyan">📊 分组汇总卡片</div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf info">🅰 上海出差 03-10~12 · 4项 · ¥2,186</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf pur">🅱 本地招待 03-15 · 2项 · ¥933</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf" style="background:#E0F7FA;border-color:#0891B2;color:#0E7490">🅲 天津出差 03-20~21 · 2项 · ¥863</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-cyan">📋 分组表格 <span class="adp-tag">Widget</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">按组显示，带组标题</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf info">每行有「所属报销单」下拉框</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">↳ 可调整分组（A→C）</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf warn">组内仍可内联补充（如餐饮事由）</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-gray">👤 用户操作</div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf act">一键提交全部 3 张报销单</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">或先提交 A，B/C 稍后处理</div></div>
+          </div>
+        </div>
+
+        <div class="mind-branch">
+          <div class="mind-conn"></div>
+          <div class="mind-node n-green">✅ 批量提交 <span class="adp-tag">循环·工具节点</span></div>
+          <div class="mind-cconn"></div>
+          <div class="mind-children">
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">生成 3 个独立报销单号</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf">各自进入独立审批流</div></div>
+            <div class="mind-child"><div class="mind-cconn"></div><div class="mind-leaf warn">含招待费的自动升级审批链</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+</body>
+</html>

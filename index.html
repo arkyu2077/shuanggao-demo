@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 智能报销助手 - ADP Demo</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--pri:#006EFF;--pri-l:#E8F1FF;--pri-h:#0052CC;--bg:#F5F7FA;--card:#FFF;--text:#1A1A1A;--sub:#8C8C8C;--bdr:#E8E8E8;--ok:#00B578;--ok-bg:#E8FFF3;--warn:#FF8F1F;--warn-bg:#FFF7E8;--err:#FA5151;--err-bg:#FFF0F0;--ai-bg:#F0F3F7;--shadow:0 2px 8px rgba(0,0,0,.08)}
+  body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex}
+
+  .sidebar{width:310px;background:var(--card);border-right:1px solid var(--bdr);display:flex;flex-direction:column;flex-shrink:0}
+  .sidebar-header{padding:18px 20px;border-bottom:1px solid var(--bdr)}
+  .sidebar-header h1{font-size:16px;font-weight:700;color:var(--pri)}
+  .sidebar-header .sub{font-size:11px;color:var(--sub);margin-top:3px}
+  .sidebar-header .badge{display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:3px 8px;background:var(--pri-l);border-radius:4px;font-size:10px;color:var(--pri);font-weight:600}
+  .scenario-list{flex:1;padding:6px;overflow-y:auto}
+  .si{padding:10px 12px;border-radius:8px;cursor:pointer;margin-bottom:2px;border:1px solid transparent;transition:all .15s}
+  .si:hover{background:var(--bg)}.si.active{background:var(--pri-l);border-color:var(--pri)}
+  .si .lb{font-size:9px;font-weight:700;letter-spacing:.5px;margin-bottom:1px}
+  .si .tt{font-size:12px;font-weight:600;margin-bottom:2px}
+  .si .ds{font-size:11px;color:var(--sub);line-height:1.4}
+  .si .nd{margin-top:3px;display:flex;flex-wrap:wrap;gap:2px}
+  .nt{font-size:8px;padding:1px 4px;border-radius:2px;background:#F0F0F0;color:#666;font-family:monospace}
+  .toggle-bar{padding:7px 12px;border-top:1px solid var(--bdr);display:flex;align-items:center;gap:6px;font-size:11px;color:var(--sub)}
+  .toggle-bar input{accent-color:var(--pri)}
+  .sidebar-footer{padding:10px 16px;border-top:1px solid var(--bdr);font-size:10px;color:var(--sub);text-align:center;line-height:1.5}
+
+  .chat-container{flex:1;display:flex;flex-direction:column;max-width:860px;margin:0 auto;width:100%}
+  .chat-header{padding:10px 20px;background:var(--card);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px}
+  .chat-header .av{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#006EFF,#0052CC);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;flex-shrink:0}
+  .chat-header .info h2{font-size:14px;font-weight:600}
+  .chat-header .info p{font-size:11px;color:var(--ok)}
+  #cm{flex:1;overflow-y:auto;padding:14px 20px;display:flex;flex-direction:column;gap:10px}
+
+  .message{display:flex;gap:8px;max-width:96%;animation:fu .25s ease}
+  @keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .message.user{align-self:flex-end;flex-direction:row-reverse}
+  .ma{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:2px;font-weight:700}
+  .message.ai .ma{background:linear-gradient(135deg,#006EFF,#0052CC);color:#fff}
+  .message.user .ma{background:#D9D9D9;color:#666}
+  .bb{padding:9px 13px;border-radius:12px;line-height:1.6;font-size:13px}
+  .message.ai .bb{background:var(--ai-bg);border-bottom-left-radius:2px}
+  .message.user .bb{background:var(--pri);color:#fff;border-bottom-right-radius:2px}
+  .typing span{width:5px;height:5px;background:#999;border-radius:50%;animation:bo 1.4s infinite;display:inline-block}
+  .typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+  .typing{display:flex;gap:4px;padding:3px 0}
+  @keyframes bo{0%,60%,100%{transform:translateY(0);opacity:.3}30%{transform:translateY(-5px);opacity:1}}
+
+  .ann{display:none;margin-top:3px;padding:3px 7px;background:#FFF9E6;border:1px dashed #FFCC00;border-radius:3px;font-size:9px;color:#996600;font-family:monospace}
+  body.show-nodes .ann{display:block}
+
+  /* Widget card */
+  .wc{background:var(--card);border:1px solid var(--bdr);border-radius:8px;margin-top:5px;overflow:hidden;box-shadow:var(--shadow)}
+  .wh{padding:9px 13px;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#fff}
+  .wh.blue{background:var(--pri)}.wh.green{background:var(--ok)}.wh.red{background:var(--err)}.wh.orange{background:var(--warn)}.wh.purple{background:#7C3AED}
+  .wb{padding:12px}
+
+  /* Editable table */
+  .etbl{width:100%;border-collapse:collapse;font-size:12px}
+  .etbl th{padding:7px 8px;text-align:left;background:var(--bg);font-size:10px;font-weight:600;color:var(--sub);border-bottom:1px solid var(--bdr);white-space:nowrap}
+  .etbl td{padding:5px 6px;border-bottom:1px solid var(--bdr);vertical-align:middle}
+  .etbl tr:last-child td{border-bottom:0}
+  .etbl tr.row-ok td{background:#fff}
+  .etbl tr.row-warn td{background:var(--warn-bg)}
+  .etbl tr.row-err td{background:var(--err-bg)}
+  .etbl tr.row-dup td{background:#FFF7ED}
+  .etbl tr.row-recall td{background:#F3E8FF}
+  .etbl tr.row-fix td{background:var(--pri-l)}
+
+  .etbl input,.etbl select,.etbl textarea{
+    width:100%;padding:5px 7px;border:1px solid var(--bdr);border-radius:4px;font-size:12px;
+    font-family:inherit;background:#fff;transition:border-color .15s;
+  }
+  .etbl input:focus,.etbl select:focus,.etbl textarea:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 2px rgba(0,110,255,.1)}
+  .etbl textarea{resize:vertical;min-height:32px}
+  .etbl .ro{background:var(--bg);border-color:transparent;color:var(--text);cursor:default}
+  .etbl .need{border-color:var(--warn);background:#FFFDF5}
+  .etbl .errfield{border-color:var(--err);background:var(--err-bg)}
+
+  .etbl .idx{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+  .idx-ok{background:var(--ok-bg);color:var(--ok)}.idx-w{background:var(--warn-bg);color:var(--warn)}.idx-e{background:var(--err-bg);color:var(--err)}.idx-d{background:#FFF7ED;color:#EA580C}.idx-r{background:#F3E8FF;color:#7C3AED}
+
+  .is{font-size:9px;padding:2px 6px;border-radius:3px;font-weight:600;white-space:nowrap}
+  .is-ok{background:var(--ok-bg);color:var(--ok)}.is-w{background:var(--warn-bg);color:var(--warn)}.is-e{background:var(--err-bg);color:var(--err)}.is-d{background:#FFF7ED;color:#EA580C}.is-r{background:#F3E8FF;color:#7C3AED}
+
+  .total-row{display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--bg);font-size:12px;font-weight:600}
+  .total-row .amt{color:var(--pri);font-size:15px}
+
+  /* Buttons */
+  .wa{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--bdr)}
+  .btn{padding:8px 16px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:4px}
+  .btn-p{background:var(--pri);color:#fff}.btn-p:hover{background:var(--pri-h)}
+  .btn-o{background:#fff;color:var(--text);border:1px solid var(--bdr)}.btn-o:hover{background:var(--bg)}
+  .btn-s{background:var(--ok);color:#fff}.btn-d{background:var(--err);color:#fff}.btn-w{background:var(--warn);color:#fff}
+
+  /* Alert */
+  .al{border-radius:5px;padding:8px 10px;margin-top:5px;font-size:11px;line-height:1.6}
+  .al.d{background:var(--err-bg);border-left:3px solid var(--err);color:#A11}
+  .al.w{background:var(--warn-bg);border-left:3px solid var(--warn);color:#7A4500}
+  .al.s{background:var(--ok-bg);border-left:3px solid var(--ok);color:#085}
+  .al.i{background:var(--pri-l);border-left:3px solid var(--pri);color:#003D99}
+
+  /* Timeline */
+  .tl{margin-top:6px}.ti{display:flex;gap:8px;padding-bottom:10px;position:relative}
+  .ti:not(:last-child)::after{content:'';position:absolute;left:10px;top:24px;bottom:0;width:2px;background:var(--bdr)}
+  .td{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;z-index:1}
+  .td.g{background:var(--ok-bg);color:var(--ok)}.td.r{background:var(--err-bg);color:var(--err)}.td.gr{background:#F0F0F0;color:#999}.td.b{background:var(--pri-l);color:var(--pri)}.td.pu{background:#F3E8FF;color:#7C3AED}
+  .tc .tt2{font-size:11px;font-weight:500}.tc .ts{font-size:10px;color:var(--sub);margin-top:1px}
+
+  .sc{background:var(--ok-bg);border:1px solid #A7F3D0;border-radius:8px;padding:14px;margin-top:5px;text-align:center}
+  .sc .icon{font-size:28px;margin-bottom:3px}.sc h3{font-size:13px;color:#065F46;margin-bottom:2px}.sc p{font-size:10px;color:#047857}
+
+  .file-list{display:flex;flex-direction:column;gap:4px;margin-top:4px}
+  .fp{background:var(--card);border:1px solid var(--bdr);border-radius:6px;padding:8px 10px;display:flex;align-items:center;gap:8px}
+  .fp .fi{width:32px;height:32px;background:var(--pri-l);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .fp .fn{font-size:12px;font-weight:500}.fp .fs{font-size:10px;color:var(--sub)}
+
+  .sp{margin-top:5px;background:var(--bg);border-radius:6px;padding:9px 11px}
+  .sp .sl{font-size:10px;color:var(--sub);margin-bottom:4px;display:flex;justify-content:space-between}
+  .pb{height:4px;background:var(--bdr);border-radius:2px;overflow:hidden}
+  .pb .pf{height:100%;background:var(--pri);border-radius:2px;transition:width .3s;width:0}
+  .ss{margin-top:5px;font-size:10px;color:var(--sub)}
+  .ss .sst{display:flex;align-items:center;gap:3px;margin-bottom:2px;opacity:.3;transition:opacity .3s}
+  .ss .sst.done{opacity:1;color:var(--ok)}.ss .sst.warn{opacity:1;color:var(--warn)}
+
+  .up{border:2px dashed var(--bdr);border-radius:8px;padding:18px;text-align:center;cursor:pointer;background:#fff;transition:all .15s;margin-top:4px}
+  .up:hover{border-color:var(--pri);background:var(--pri-l)}
+  .up .ui{font-size:26px}.up .ut{font-size:11px;color:var(--sub);margin-top:3px}
+
+  .chat-input-area{padding:10px 20px;background:var(--card);border-top:1px solid var(--bdr)}
+  .chat-input-wrapper{display:flex;gap:7px;align-items:center}
+  .ci{flex:1;padding:9px 13px;border:1px solid var(--bdr);border-radius:8px;font-size:13px;outline:none}
+  .ci:focus{border-color:var(--pri)}.ci:disabled{background:var(--bg);color:var(--sub)}
+  .sb{width:34px;height:34px;border-radius:8px;background:var(--pri);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .sb:disabled{background:#CCC;cursor:not-allowed}
+
+  @media(max-width:768px){.sidebar{display:none}}
+  .dm{position:fixed;bottom:6px;right:8px;font-size:9px;color:#CCC;pointer-events:none;z-index:1000}
+
+  /* Upload btn inside table */
+  .upload-mini{padding:4px 10px;border:1px dashed var(--bdr);border-radius:4px;font-size:11px;color:var(--sub);cursor:pointer;background:#fff;transition:all .15s;text-align:center}
+  .upload-mini:hover{border-color:var(--pri);color:var(--pri);background:var(--pri-l)}
+  .uploaded-tag{font-size:10px;padding:2px 6px;background:var(--ok-bg);color:var(--ok);border-radius:3px;font-weight:600}
+
+  /* Group headers for multi-report */
+  .group-hdr{background:var(--pri);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:space-between;padding:8px 12px}
+  .group-hdr.g2{background:#7C3AED}.group-hdr.g3{background:#0891B2}
+  .group-hdr .gtag{font-size:9px;padding:2px 8px;background:rgba(255,255,255,.2);border-radius:3px}
+  .group-sub{font-size:11px;padding:7px 12px;background:var(--bg);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bdr)}
+  .group-sub .amt{font-weight:700;color:var(--pri)}
+  .etbl .group-select{width:auto;min-width:80px;font-size:10px;padding:3px 5px;border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1>🤖 AI 报销助手</h1>
+    <div class="sub">基于腾讯云 ADP 智能体平台构建</div>
+    <div class="badge">⚡ Tencent ADP · 可编辑表单 · 多票据</div>
+  </div>
+  <div class="scenario-list">
+    <div class="si active" onclick="sw(1)">
+      <div class="lb" style="color:var(--ok)">场景一 · 批量顺畅</div>
+      <div class="tt">3 张交通票 → 可编辑表格 → 一键确认</div>
+      <div class="ds">全部识别后展示可编辑明细表，用户直接改</div>
+    </div>
+    <div class="si" onclick="sw(2)">
+      <div class="lb" style="color:var(--warn)">场景二 · 混合票据</div>
+      <div class="tt">3 张不同类型 → 空字段内联填写 → 确认</div>
+      <div class="ds">缺失字段在表格内用下拉框/输入框填写</div>
+    </div>
+    <div class="si" onclick="sw(3)">
+      <div class="lb" style="color:var(--err)">场景三 · 审批驳回</div>
+      <div class="tt">查询 → 问题项内联修改 → 重新提交</div>
+      <div class="ds">被驳回的字段直接在表格里改，一键重提</div>
+    </div>
+    <div class="si" onclick="sw(4)">
+      <div class="lb" style="color:#EA580C">场景四 · 合规预警</div>
+      <div class="tt">3 张票据 → 超标项内联选处理方案</div>
+      <div class="ds">超标项在表格行内选择处理方式</div>
+    </div>
+    <div class="si" onclick="sw(5)">
+      <div class="lb" style="color:var(--pri)">场景五 · 重复检测</div>
+      <div class="tt">3 张票据 → 重复项行内选操作</div>
+      <div class="ds">重复项直接在行内选保留/删除</div>
+    </div>
+    <div class="si" onclick="sw(6)">
+      <div class="lb" style="color:#7C3AED">场景六 · 审后追回</div>
+      <div class="tt">4 项中 2 项追回 → 行内补材料+修改</div>
+      <div class="ds">追回项在表格行内上传补充材料</div>
+    </div>
+    <div class="si" onclick="sw(7)">
+      <div class="lb" style="color:#0891B2">场景七 · 多次积攒</div>
+      <div class="tt">8 张票据 → AI 自动分 3 张报销单</div>
+      <div class="ds">不同出差/日期的票据混在一起上传，AI 按行程智能分组</div>
+      <div class="nd"><span class="nt">文件收集×8</span><span class="nt">循环·OCR</span><span class="nt">LLM·分组</span><span class="nt">Widget·分组表</span></div>
+    </div>
+  </div>
+  <div class="toggle-bar">
+    <input type="checkbox" id="sn" onchange="document.body.classList.toggle('show-nodes',this.checked)">
+    <label for="sn">显示 ADP 节点映射</label>
+  </div>
+  <div class="sidebar-footer">
+    <a href="#" onclick="openMindmap();return false" style="color:var(--pri);text-decoration:none;font-weight:600;font-size:11px">🗺️ 查看场景思维导图</a>
+    <br>Demo v5.0 · 可编辑表格交互 · 数据模拟
+  </div>
+</div>
+
+<!-- Mindmap modal -->
+<div id="mmModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);animation:fadeIn .2s">
+  <div style="position:absolute;inset:10px;background:#F5F7FA;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+    <div style="padding:10px 16px;background:#fff;border-bottom:1px solid #E8E8E8;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <span style="font-size:14px;font-weight:700;color:#006EFF">🗺️ 场景思维导图</span>
+      <button onclick="closeMindmap()" style="width:30px;height:30px;border-radius:6px;border:1px solid #E8E8E8;background:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <iframe id="mmFrame" src="" style="flex:1;border:none;width:100%"></iframe>
+  </div>
+</div>
+<style>@keyframes fadeIn{from{opacity:0}to{opacity:1}}</style>
+
+<div class="chat-container">
+  <div class="chat-header">
+    <div class="av">AI</div>
+    <div class="info"><h2>报销智能助手</h2><p>● 在线 · 支持批量票据</p></div>
+  </div>
+  <div id="cm" class="chat-messages"></div>
+  <div class="chat-input-area">
+    <div class="chat-input-wrapper">
+      <input type="text" class="ci" id="ci" placeholder="输入消息..." disabled>
+      <button class="sb" id="sb" disabled>↑</button>
+    </div>
+  </div>
+</div>
+<div class="dm">ADP Reimbursement Demo v5.0</div>
+
+<script>
+const $m=document.getElementById('cm'),$i=document.getElementById('ci'),$s=document.getElementById('sb');
+let icb=null;
+const D=ms=>new Promise(r=>setTimeout(r,ms));
+function scr(){$m.scrollTop=$m.scrollHeight}
+function msg(t,h,a){const d=document.createElement('div');d.className=`message ${t}`;const av=t==='user'?'我':'AI';const an=a?`<div class="ann">📎 ${a}</div>`:'';d.innerHTML=`<div class="ma">${av}</div><div class="bb">${h}${an}</div>`;$m.appendChild(d);scr();return d}
+function wid(h,a){const d=document.createElement('div');d.className='message ai';const an=a?`<div class="ann">📎 ${a}</div>`:'';d.innerHTML=`<div class="ma">AI</div><div class="bb" style="padding:6px 0 0;background:transparent">${h}${an}</div>`;$m.appendChild(d);scr();return d}
+async function typ(ms){const d=document.createElement('div');d.className='message ai';d.innerHTML=`<div class="ma">AI</div><div class="bb"><div class="typing"><span></span><span></span><span></span></div></div>`;$m.appendChild(d);scr();await D(ms);d.remove()}
+function ei(ph,cb){$i.disabled=false;$s.disabled=false;$i.placeholder=ph;$i.focus();icb=cb}
+function di(){$i.disabled=true;$s.disabled=true;$i.placeholder='等待中...';icb=null}
+$s.addEventListener('click',hs);$i.addEventListener('keydown',e=>{if(e.key==='Enter')hs()});
+function hs(){if(!icb||!$i.value.trim())return;const v=$i.value.trim();$i.value='';msg('user',v);const c=icb;di();c(v)}
+function suc(id,m){wid(`<div class="sc"><div class="icon">✅</div><h3>${m||'报销单已提交审批！'}</h3><p>编号：${id}</p></div>`,'回复节点')}
+function files(arr){let h='<div class="file-list">';arr.forEach(f=>{h+=`<div class="fp"><div class="fi">🧾</div><div><div class="fn">${f[0]}</div><div class="fs">${f[1]}</div></div></div>`});h+='</div>';wid(h,'文件收集节点 → 批量接收')}
+async function scan(steps,warn){const id='sc'+Date.now();let sh=steps.map((l,i)=>`<div class="sst" id="${id}_${i}">⬜ ${l}</div>`).join('');
+wid(`<div class="sp"><div class="sl"><span>🔍 批量识别中...</span><span id="${id}_p">0%</span></div><div class="pb"><div class="pf" id="${id}_b"></div></div><div class="ss">${sh}</div></div>`,'循环节点 → OCR × N');
+for(let i=0;i<steps.length;i++){await D(400);const p=Math.round((i+1)/steps.length*100);document.getElementById(`${id}_b`).style.width=p+'%';document.getElementById(`${id}_p`).textContent=p+'%';const el=document.getElementById(`${id}_${i}`);if(i===steps.length-1&&warn){el.textContent='⚠️ '+steps[i];el.classList.add('warn')}else{el.textContent='✅ '+steps[i];el.classList.add('done')}scr()}await D(200)}
+
+function readForm(id){
+  const form=document.getElementById(id);if(!form)return{};const data={};
+  form.querySelectorAll('[data-field]').forEach(el=>{data[el.dataset.field]=el.value});
+  return data;
+}
+
+// ══════════════════════════════════════
+// S1: 3 transport receipts — editable table
+// ══════════════════════════════════════
+async function S1(){
+  await D(300);msg('ai','你好！我是报销助手 👋<br>请发送报销单据，支持<b>一次上传多张</b>，我会批量识别并生成可编辑的报销表格。','回复节点');await D(300);
+  wid(`<div class="up" onclick="s1u()"><div class="ui">📎</div><div class="ut">点击批量上传发票 · 支持多选 · 最多20张</div></div>`,'文件收集节点');
+}
+window.s1u=async function(){
+  $m.querySelectorAll('[onclick="s1u()"]').forEach(u=>u.closest('.message').remove());
+  msg('user','📎 上传了 3 张票据');
+  files([['出租车发票_20260318.jpg','1.2 MB'],['地铁充值发票_20260318.jpg','340 KB'],['停车费发票_20260318.jpg','580 KB']]);
+  await scan(['第 1/3 张：出租车 — 识别','第 2/3 张：地铁 — 识别','第 3/3 张：停车费 — 识别','合并校验'],false);
+  msg('ai','3 张票据全部识别完成 ✅ 以下是可编辑的报销表格，你可以直接修改任意字段：','LLM节点');await D(200);
+
+  wid(`
+    <div class="wc">
+      <div class="wh blue">📋 报销单 — 交通费（3 项明细）<span style="margin-left:auto;font-size:10px;font-weight:400;opacity:.8">所有字段均可编辑</span></div>
+      <div class="wb" style="padding:0">
+        <div style="overflow-x:auto">
+        <table class="etbl" id="f1">
+          <tr><th width="30">#</th><th>类别</th><th>明细描述</th><th width="90">日期</th><th width="90">金额(元)</th><th width="80">状态</th></tr>
+          <tr class="row-ok">
+            <td><span class="idx idx-ok">1</span></td>
+            <td><select data-field="cat1" class="ro"><option>出租车</option><option>网约车</option><option>公交</option><option>地铁</option><option>停车费</option><option>其他交通</option></select></td>
+            <td><input data-field="desc1" value="望京SOHO → 中关村软件园 · 22.3km"></td>
+            <td><input data-field="date1" value="2026-03-18" type="date"></td>
+            <td><input data-field="amt1" value="68.00" type="number" step="0.01"></td>
+            <td><span class="is is-ok">✅ AI识别</span></td>
+          </tr>
+          <tr class="row-ok">
+            <td><span class="idx idx-ok">2</span></td>
+            <td><select data-field="cat2" class="ro"><option>地铁</option><option>出租车</option><option>公交</option><option>其他交通</option></select></td>
+            <td><input data-field="desc2" value="一卡通充值"></td>
+            <td><input data-field="date2" value="2026-03-18" type="date"></td>
+            <td><input data-field="amt2" value="50.00" type="number" step="0.01"></td>
+            <td><span class="is is-ok">✅ AI识别</span></td>
+          </tr>
+          <tr class="row-ok">
+            <td><span class="idx idx-ok">3</span></td>
+            <td><select data-field="cat3" class="ro"><option>停车费</option><option>出租车</option><option>其他交通</option></select></td>
+            <td><input data-field="desc3" value="中关村软件园 B2 停车场"></td>
+            <td><input data-field="date3" value="2026-03-18" type="date"></td>
+            <td><input data-field="amt3" value="30.00" type="number" step="0.01"></td>
+            <td><span class="is is-ok">✅ AI识别</span></td>
+          </tr>
+        </table>
+        </div>
+        <div class="total-row"><span>合计 3 项 · 交通费</span><span class="amt">¥ 148.00</span></div>
+      </div>
+      <div class="wb" style="padding-top:0">
+        <table class="etbl">
+          <tr><td style="border:0;width:80px"><span style="font-size:10px;color:var(--sub);font-weight:600">报销人</span></td>
+          <td style="border:0"><input value="张明" class="ro" readonly></td>
+          <td style="border:0;width:80px"><span style="font-size:10px;color:var(--sub);font-weight:600">部门</span></td>
+          <td style="border:0"><input value="产品研发部" class="ro" readonly></td></tr>
+          <tr><td style="border:0"><span style="font-size:10px;color:var(--sub);font-weight:600">出差事由</span></td>
+          <td style="border:0" colspan="3"><input data-field="reason" placeholder="选填，例如：中关村项目现场支持"></td></tr>
+        </table>
+        <div class="wa">
+          <button class="btn btn-p" onclick="s1c()">✓ 确认提交报销单</button>
+          <button class="btn btn-o" onclick="msg('ai','表格所有字段可直接编辑，修改后点确认即可。')">如何修改？</button>
+        </div>
+      </div>
+    </div>
+  `,'Widget节点 → 可编辑表单（Form组件）');
+}
+
+window.s1c=async function(){
+  const d=readForm('f1');
+  msg('user','确认提交（3 项 · ¥148.00）');await typ(500);
+  suc('EXP-2026031801');await D(200);
+  msg('ai','审批路径：张明 → 李经理 → 财务部<br>预计 1-2 个工作日，随时输入单号查询进度。','回复节点');
+}
+
+// ══════════════════════════════════════
+// S2: Mixed — restaurant needs inline fill
+// ══════════════════════════════════════
+async function S2(){
+  await D(300);msg('ai','你好！请上传报销单据 😊','回复节点');await D(300);
+  wid(`<div class="up" onclick="s2u()"><div class="ui">📎</div><div class="ut">点击批量上传发票</div></div>`,'文件收集节点');
+}
+window.s2u=async function(){
+  $m.querySelectorAll('[onclick="s2u()"]').forEach(u=>u.closest('.message').remove());
+  msg('user','📎 上传了 3 张票据');
+  files([['出租车发票_20260320.jpg','1.1 MB'],['餐饮发票_西贝_20260320.jpg','2.4 MB'],['酒店发票_亚朵_20260320.jpg','1.8 MB']]);
+  await scan(['第 1/3 张：出租车 — 完整','第 2/3 张：餐饮 — 部分缺失','第 3/3 张：酒店 — 完整','合并'],true);
+  msg('ai','已识别 3 张票据。第 2 项（餐饮）有 3 个字段需要你在表格中填写，<span style="color:var(--warn)">橙色输入框</span>就是：','LLM节点 → 条件分支');await D(200);
+
+  wid(`
+    <div class="wc">
+      <div class="wh orange">📋 报销单 — 出差费用（3 项，第 2 项需补充）</div>
+      <div class="wb" style="padding:0">
+        <div style="overflow-x:auto">
+        <table class="etbl" id="f2">
+          <tr><th>#</th><th>类别</th><th>明细描述</th><th width="85">日期</th><th width="85">金额</th><th width="65">状态</th></tr>
+          <tr class="row-ok">
+            <td><span class="idx idx-ok">1</span></td>
+            <td><input value="出租车" class="ro" readonly></td>
+            <td><input value="机场 → 亚朵酒店 · 15.6km" data-field="d1"></td>
+            <td><input value="2026-03-20" type="date" data-field="dt1"></td>
+            <td><input value="45.00" type="number" step="0.01" data-field="a1"></td>
+            <td><span class="is is-ok">✅</span></td>
+          </tr>
+          <tr class="row-warn">
+            <td><span class="idx idx-w">2</span></td>
+            <td><input value="餐饮·招待" class="ro" readonly></td>
+            <td><input value="西贝莜面村（中关村店）" data-field="d2"></td>
+            <td><input value="2026-03-20" type="date" data-field="dt2"></td>
+            <td><input value="856.00" type="number" step="0.01" data-field="a2"></td>
+            <td><span class="is is-w">⏳ 补充</span></td>
+          </tr>
+          <tr class="row-warn" style="background:var(--warn-bg)">
+            <td colspan="6" style="padding:6px 8px 10px">
+              <div style="font-size:10px;font-weight:600;color:#7A4500;margin-bottom:6px">▼ 第 2 项需要补充以下信息</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <div style="flex:1;min-width:120px">
+                  <div style="font-size:10px;color:var(--sub);margin-bottom:2px">用餐事由</div>
+                  <select data-field="purpose" class="need">
+                    <option value="">— 请选择 —</option><option>客户招待</option><option>团队聚餐</option><option>商务洽谈</option><option>项目庆功</option>
+                  </select>
+                </div>
+                <div style="flex:1;min-width:100px">
+                  <div style="font-size:10px;color:var(--sub);margin-bottom:2px">用餐人数</div>
+                  <select data-field="pcount" class="need">
+                    <option value="">— 请选择 —</option><option>2人</option><option>3-4人</option><option>5-6人</option><option>7人以上</option>
+                  </select>
+                </div>
+                <div style="flex:1;min-width:140px">
+                  <div style="font-size:10px;color:var(--sub);margin-bottom:2px">客户公司</div>
+                  <input data-field="company" class="need" placeholder="非客户招待填"无"">
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr class="row-ok">
+            <td><span class="idx idx-ok">3</span></td>
+            <td><input value="住宿" class="ro" readonly></td>
+            <td><input value="亚朵酒店（中关村店）· 1晚" data-field="d3"></td>
+            <td><input value="2026-03-20" type="date" data-field="dt3"></td>
+            <td><input value="458.00" type="number" step="0.01" data-field="a3"></td>
+            <td><span class="is is-ok">✅</span></td>
+          </tr>
+        </table>
+        </div>
+        <div class="total-row"><span>合计 3 项</span><span class="amt">¥ 1,359.00</span></div>
+      </div>
+      <div class="wb" style="padding-top:0">
+        <table class="etbl"><tr>
+          <td style="border:0;width:60px"><span style="font-size:10px;color:var(--sub);font-weight:600">报销人</span></td>
+          <td style="border:0"><input value="张明 · 产品研发部" class="ro" readonly></td>
+        </tr></table>
+        <div class="wa">
+          <button class="btn btn-p" onclick="s2c()">✓ 填写完成，提交报销单</button>
+        </div>
+      </div>
+    </div>
+  `,'Widget节点 → 可编辑表单（含内联补充区）');
+}
+
+window.s2c=async function(){
+  const d=readForm('f2');
+  const purpose=d.purpose||'客户招待',pcount=d.pcount||'5-6人',company=d.company||'字节跳动';
+  msg('user',`提交（事由:${purpose} / ${pcount} / ${company}）`);await typ(600);
+  suc('EXP-2026032001');await D(200);
+  msg('ai','含招待费 ¥856 > ¥500，已自动抄送总监。<br>路径：张明 → 李经理 → 王总监 → 财务部');
+}
+
+// ══════════════════════════════════════
+// S3: Rejection — inline fix
+// ══════════════════════════════════════
+async function S3(){
+  await D(300);msg('ai','你好！输入报销单号查询进度，或上传新票据。','回复节点');
+  ei('输入报销单号，如 EXP-2026031501',async v=>{await s3q()});
+}
+async function s3q(){await typ(400);msg('ai','正在查询...','参数提取');await typ(600);
+  msg('ai','<b>EXP-2026031501</b> 已被驳回。第 2 项有问题，请直接在表格中修改<span style="color:var(--err)">红色标记</span>的字段：','数据库节点 → Widget');await D(200);
+
+  wid(`
+    <div class="wc" style="border-color:var(--err)">
+      <div class="wh red">🚫 EXP-2026031501 · 已驳回 — 请直接修改</div>
+      <div class="wb">
+        <div class="al d" style="margin:0 0 10px">
+          <b>驳回人：</b>李经理 · 03-22 14:32<br>
+          <b>问题：</b>① 第2项日期与出差申请不符 ② 费用类别"交通费"不准确，¥2,180超出出租车范围
+        </div>
+      </div>
+      <div class="wb" style="padding:0">
+        <div style="overflow-x:auto">
+        <table class="etbl" id="f3">
+          <tr><th>#</th><th>类别</th><th>明细</th><th width="85">日期</th><th width="85">金额</th><th width="65">状态</th></tr>
+          <tr class="row-ok">
+            <td><span class="idx idx-ok">1</span></td>
+            <td><input value="出租车" class="ro" readonly></td>
+            <td><input value="机场 → 酒店" class="ro" readonly></td>
+            <td><input value="2026-03-12" class="ro" readonly></td>
+            <td><input value="128.00" class="ro" readonly></td>
+            <td><span class="is is-ok">✅ 通过</span></td>
+          </tr>
+          <tr class="row-err">
+            <td><span class="idx idx-e">2</span></td>
+            <td>
+              <select data-field="cat2" class="errfield">
+                <option>交通费</option><option selected>包车费</option><option>网约车</option>
+              </select>
+            </td>
+            <td><input data-field="desc2" value="北京 → 天津滨海新区" class="errfield"></td>
+            <td><input data-field="date2" value="2026-03-15" type="date" class="errfield"></td>
+            <td><input value="2180.00" class="ro" readonly></td>
+            <td><span class="is is-e">❌ 驳回</span></td>
+          </tr>
+          <tr class="row-err" style="background:var(--err-bg)">
+            <td colspan="6" style="padding:6px 8px 10px">
+              <div style="font-size:10px;font-weight:600;color:#A11;margin-bottom:6px">▼ 请修改第 2 项并补充说明</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <div style="flex:1;min-width:160px">
+                  <div style="font-size:10px;color:var(--sub);margin-bottom:2px">日期不一致原因</div>
+                  <select data-field="datereason" class="errfield">
+                    <option value="">— 请选择 —</option><option>出差延长到15号，日期正确</option><option>返程交通，不在出差同一天</option><option>发票日期打印有误</option>
+                  </select>
+                </div>
+                <div style="flex:1;min-width:180px">
+                  <div style="font-size:10px;color:var(--sub);margin-bottom:2px">补充说明</div>
+                  <input data-field="note" class="errfield" placeholder="例如：客户临时延长会议，出差延至15号" value="">
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr class="row-ok">
+            <td><span class="idx idx-ok">3</span></td>
+            <td><input value="住宿" class="ro" readonly></td>
+            <td><input value="亚朵酒店 · 2晚" class="ro" readonly></td>
+            <td><input value="2026-03-12" class="ro" readonly></td>
+            <td><input value="916.00" class="ro" readonly></td>
+            <td><span class="is is-ok">✅ 通过</span></td>
+          </tr>
+        </table>
+        </div>
+        <div class="total-row"><span>合计 3 项（仅第 2 项需修改）</span><span class="amt">¥ 3,224.00</span></div>
+      </div>
+      <div class="wb" style="padding-top:0">
+        <div class="al i">💡 第 1、3 项已通过，不受影响。修改第 2 项后即可重新提交。</div>
+        <div class="wa">
+          <button class="btn btn-p" onclick="s3c()">✓ 修改完毕，重新提交</button>
+        </div>
+      </div>
+    </div>
+  `,'Widget节点 → 可编辑表单');
+}
+
+window.s3c=async function(){
+  const d=readForm('f3');
+  msg('user',`重新提交（类别:${d.cat2||'包车费'} / 原因:${d.datereason||'出差延长'}）`);
+  await typ(600);suc('EXP-2026031501（修订版）','修改后重新提交！');await D(200);
+  msg('ai','仅第 2 项重新审核，第 1、3 项保持。预计 1 个工作日。');
+}
+
+// ══════════════════════════════════════
+// S4: Compliance — inline resolution
+// ══════════════════════════════════════
+async function S4(){
+  await D(300);msg('ai','你好！请上传报销单据 😊','回复节点');await D(300);
+  wid(`<div class="up" onclick="s4u()"><div class="ui">📎</div><div class="ut">点击批量上传发票</div></div>`,'文件收集节点');
+}
+window.s4u=async function(){
+  $m.querySelectorAll('[onclick="s4u()"]').forEach(u=>u.closest('.message').remove());
+  msg('user','📎 上传了 3 张票据');
+  files([['出租车发票_20260321.jpg','980 KB'],['餐饮发票_全聚德_20260321.jpg','3.1 MB'],['酒店发票_亚朵_20260321.jpg','1.5 MB']]);
+  await scan(['第 1/3 张：出租车 — ✓','第 2/3 张：餐饮 — ✓','第 3/3 张：酒店 — ✓','合规逐项校验'],true);
+  msg('ai','3 张已识别。<b>第 2 项（餐饮 ¥2,380）超出公司标准</b>，请在表格中选择处理方式：','代码节点 → 校验');await D(200);
+
+  wid(`
+    <div class="wc" style="border-color:var(--warn)">
+      <div class="wh orange">🚨 报销单 — 出差费用（第 2 项超标）</div>
+      <div class="wb" style="padding:0">
+        <div style="overflow-x:auto">
+        <table class="etbl" id="f4">
+          <tr><th>#</th><th>类别</th><th>明细</th><th width="85">金额</th><th width="65">状态</th></tr>
+          <tr class="row-ok">
+            <td><span class="idx idx-ok">1</span></td>
+            <td>出租车</td><td>望京 → 全聚德</td><td>¥ 45.00</td>
+            <td><span class="is is-ok">✅</span></td>
+          </tr>
+          <tr class="row-warn">
+            <td><span class="idx idx-w">2</span></td>
+            <td>餐饮·招待</td><td>全聚德（中关村店）</td>
+            <td style="color:var(--err);font-weight:700">¥ 2,380.00</td>
+            <td><span class="is is-w">⚠️ 超标</span></td>
+          </tr>
+          <tr class="row-warn" style="background:var(--warn-bg)">
+            <td colspan="5" style="padding:8px">
+              <div class="al w" style="margin:0 0 8px">
+                6人用餐，人均 <b>¥396.67</b> · 公司标准 <b>¥300/人</b> · 超出 32%
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <div style="flex:1;min-width:180px">
+                  <div style="font-size:10px;color:var(--sub);margin-bottom:2px">处理方式</div>
+                  <select data-field="resolve" class="need" onchange="s4toggle(this.value)">
+                    <option value="">— 请选择 —</option>
+                    <option value="A">A. 填写理由，触发总监审批（全额报销）</option>
+                    <option value="B">B. 修正人数为 8 人（¥297.5/人 · 合规）</option>
+                    <option value="C">C. 拆分：公司 ¥1,800 + 个人 ¥580</option>
+                  </select>
+                </div>
+                <div style="flex:1;min-width:180px" id="s4extra">
+                  <div style="font-size:10px;color:var(--sub);margin-bottom:2px">补充说明（选 A 时必填）</div>
+                  <input data-field="s4note" class="need" placeholder="例如：接待VP来访">
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr class="row-ok">
+            <td><span class="idx idx-ok">3</span></td>
+            <td>住宿</td><td>亚朵酒店 · 1晚</td><td>¥ 458.00</td>
+            <td><span class="is is-ok">✅</span></td>
+          </tr>
+        </table>
+        </div>
+        <div class="total-row"><span>合计 3 项</span><span class="amt">¥ 2,883.00</span></div>
+      </div>
+      <div class="wb" style="padding-top:0">
+        <div class="wa"><button class="btn btn-p" onclick="s4c()">✓ 确认处理方式并提交</button></div>
+      </div>
+    </div>
+  `,'Widget → 内联处理');
+}
+
+window.s4toggle=function(v){
+  const ex=document.getElementById('s4extra');
+  if(v==='A')ex.innerHTML='<div style="font-size:10px;color:var(--sub);margin-bottom:2px">超标理由（必填）</div><input data-field="s4note" class="need" placeholder="例如：接待字节VP来访">';
+  else if(v==='B')ex.innerHTML='<div style="font-size:10px;color:var(--sub);margin-bottom:2px">实际人数</div><input data-field="s4note" class="need" value="8人" readonly>';
+  else if(v==='C')ex.innerHTML='<div style="font-size:10px;color:var(--sub);margin-bottom:2px">拆分结果</div><input class="ro" value="公司 ¥1,800 + 个人 ¥580" readonly>';
+  else ex.innerHTML='<div style="font-size:10px;color:var(--sub);margin-bottom:2px">补充说明</div><input data-field="s4note" class="need" placeholder="选择处理方式后填写">';
+}
+
+window.s4c=async function(){
+  const d=readForm('f4');const r=d.resolve||'A';
+  const labels={A:'总监审批(全额)',B:'修正8人(合规)',C:'拆分(公司¥1800)'};
+  msg('user',`提交（处理方式：${labels[r]||'A'}）`);await typ(500);
+  suc('EXP-2026032101');await D(200);
+  if(r==='A')msg('ai','审批链升级：张明 → 李经理 → <b>王总监</b> → 财务');
+  else if(r==='B')msg('ai','人均 ¥297.50 合规 ✅ 正常审批：张明 → 李经理 → 财务');
+  else msg('ai','报销金额调整为 ¥2,303（-¥580）。正常审批：张明 → 李经理 → 财务');
+}
+
+// ══════════════════════════════════════
+// S5: Duplicate — inline action
+// ══════════════════════════════════════
+async function S5(){
+  await D(300);msg('ai','你好！请上传报销单据 😊','回复节点');await D(300);
+  wid(`<div class="up" onclick="s5u()"><div class="ui">📎</div><div class="ut">点击批量上传发票</div></div>`,'文件收集节点');
+}
+window.s5u=async function(){
+  $m.querySelectorAll('[onclick="s5u()"]').forEach(u=>u.closest('.message').remove());
+  msg('user','📎 上传了 3 张票据');
+  files([['出租车发票_20260322.jpg','1.0 MB'],['酒店发票_亚朵_20260310.jpg','1.8 MB'],['地铁发票_20260322.jpg','420 KB']]);
+  await scan(['第 1/3 张：出租车 — ✓','第 2/3 张：酒店 — ⚠️ 历史匹配','第 3/3 张：地铁 — ✓','汇总'],true);
+  msg('ai','<b>第 2 项（酒店）</b>检测到与历史记录重复，请在表格中选择处理方式：','数据库节点');await D(200);
+
+  wid(`
+    <div class="wc" style="border-color:#EA580C">
+      <div class="wh" style="background:#EA580C;color:#fff">🔁 报销单（第 2 项疑似重复）</div>
+      <div class="wb" style="padding:0">
+        <div style="overflow-x:auto">
+        <table class="etbl" id="f5">
+          <tr><th>#</th><th>类别</th><th>明细</th><th width="85">金额</th><th width="65">状态</th></tr>
+          <tr class="row-ok">
+            <td><span class="idx idx-ok">1</span></td>
+            <td>出租车</td><td>海淀 → 朝阳 · 03-22</td><td>¥ 52.00</td>
+            <td><span class="is is-ok">✅</span></td>
+          </tr>
+          <tr class="row-dup">
+            <td><span class="idx idx-d">2</span></td>
+            <td>住宿</td><td>亚朵酒店 · 发票号 110501837294</td><td>¥ 892.00</td>
+            <td><span class="is is-d">🔁 重复</span></td>
+          </tr>
+          <tr class="row-dup" style="background:#FFF7ED">
+            <td colspan="5" style="padding:8px">
+              <div class="al w" style="margin:0 0 8px;border-color:#EA580C;background:#FFF7ED;color:#9A3412">
+                与 <b>EXP-2026031002</b>（03-11提交 · 已通过）完全匹配：发票号/金额/日期/商户一致
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <div style="flex:1;min-width:200px">
+                  <div style="font-size:10px;color:var(--sub);margin-bottom:2px">处理方式</div>
+                  <select data-field="dupaction" class="need" onchange="s5toggle(this.value)">
+                    <option value="">— 请选择 —</option>
+                    <option value="del">删除此项（确实重复）</option>
+                    <option value="keep">保留此项（不是重复，补充说明）</option>
+                  </select>
+                </div>
+                <div style="flex:1;min-width:200px" id="s5extra">
+                  <div style="font-size:10px;color:var(--sub);margin-bottom:2px">说明（保留时必填）</div>
+                  <input data-field="dupnote" class="need" placeholder="例如：第二次入住" disabled>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr class="row-ok">
+            <td><span class="idx idx-ok">3</span></td>
+            <td>地铁</td><td>一卡通充值 · 03-22</td><td>¥ 30.00</td>
+            <td><span class="is is-ok">✅</span></td>
+          </tr>
+        </table>
+        </div>
+        <div class="total-row"><span>合计 3 项</span><span class="amt">¥ 974.00</span></div>
+      </div>
+      <div class="wb" style="padding-top:0">
+        <div class="wa"><button class="btn btn-p" onclick="s5c()">✓ 确认并提交</button></div>
+      </div>
+    </div>
+  `,'Widget → 行内处理');
+}
+
+window.s5toggle=function(v){
+  const ex=document.getElementById('s5extra');
+  if(v==='keep'){ex.innerHTML='<div style="font-size:10px;color:var(--sub);margin-bottom:2px">说明（必填）</div><input data-field="dupnote" class="need" placeholder="例如：第二次客户现场入住">';
+  }else{ex.innerHTML='<div style="font-size:10px;color:var(--sub);margin-bottom:2px">提示</div><input class="ro" value="将移除此项，仅提交第1、3项" readonly>';}
+}
+
+window.s5c=async function(){
+  const d=readForm('f5');const act=d.dupaction||'del';
+  if(act==='del'){msg('user','删除重复项，提交剩余 2 项');await typ(500);suc('EXP-2026032201','已提交 2 项 · ¥82.00');msg('ai','第 2 项已排除，系统拦截了一次重复报销 🛡️')}
+  else{msg('user','保留，补充说明：'+(d.dupnote||'第二次入住'));await typ(500);suc('EXP-2026032301','3 项全部提交');msg('ai','已标注区分说明，审批人可查看两次记录对比。')}
+}
+
+// ══════════════════════════════════════
+// S6: Post-approval recall — inline fix
+// ══════════════════════════════════════
+async function S6(){
+  await D(300);msg('ai','你好！输入报销单号查询进度，或上传新票据。','回复节点');
+  ei('输入报销单号',async v=>{await s6q()});
+}
+async function s6q(){await typ(400);msg('ai','正在查询...','参数提取');await typ(600);
+  msg('ai','<b>EXP-2026030801</b> 有 4 项明细，其中<b>第 2、4 项被财务追回</b>。请直接在表格中处理：','数据库 → Widget');await D(200);
+
+  wid(`
+    <div class="wc" style="border-color:#7C3AED">
+      <div class="wh purple">⚠️ EXP-2026030801 · 2/4 项被追回 — 请在表格中修正</div>
+      <div class="wb">
+        <div class="al d" style="margin:0 0 8px">
+          <b>追回人：</b>财务部·陈会计 · 03-22 16:45<br>
+          <b>第 2 项：</b>发票抬头不一致（"XX科技" ≠ "XX信息技术"）<br>
+          <b>第 4 项：</b>缺少住宿水单
+        </div>
+      </div>
+      <div class="wb" style="padding:0">
+        <div style="overflow-x:auto">
+        <table class="etbl" id="f6">
+          <tr><th>#</th><th>类别</th><th>明细</th><th width="85">金额</th><th width="120">操作</th><th width="55">状态</th></tr>
+          <tr class="row-ok">
+            <td><span class="idx idx-ok">1</span></td>
+            <td>出租车</td><td>机场 → 酒店 · 03-08</td><td>¥ 86.00</td>
+            <td><span style="font-size:10px;color:var(--sub)">无需操作</span></td>
+            <td><span class="is is-ok">✅</span></td>
+          </tr>
+          <tr class="row-recall">
+            <td><span class="idx idx-r">2</span></td>
+            <td>住宿</td><td>亚朵酒店 · 03-08~09</td><td>¥ 892.00</td>
+            <td></td>
+            <td><span class="is is-r">↩ 追回</span></td>
+          </tr>
+          <tr class="row-recall" style="background:#F3E8FF">
+            <td colspan="6" style="padding:8px">
+              <div style="font-size:10px;font-weight:600;color:#7C3AED;margin-bottom:6px">▼ 第 2 项：发票抬头不一致 — 请处理</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">
+                <div style="flex:1;min-width:160px">
+                  <div style="font-size:10px;color:var(--sub);margin-bottom:2px">处理方式</div>
+                  <select data-field="fix2" class="need">
+                    <option value="">— 请选择 —</option>
+                    <option>重新开具正确抬头发票</option>
+                    <option>提供公司名称变更证明</option>
+                    <option>申请特批</option>
+                  </select>
+                </div>
+                <div style="flex:1;min-width:160px">
+                  <div style="font-size:10px;color:var(--sub);margin-bottom:2px">上传新发票/证明</div>
+                  <div class="upload-mini" onclick="s6f2(this)">📎 点击上传文件</div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr class="row-ok">
+            <td><span class="idx idx-ok">3</span></td>
+            <td>餐饮</td><td>西贝 · 客户招待 · 03-09</td><td>¥ 680.00</td>
+            <td><span style="font-size:10px;color:var(--sub)">无需操作</span></td>
+            <td><span class="is is-ok">✅</span></td>
+          </tr>
+          <tr class="row-recall">
+            <td><span class="idx idx-r">4</span></td>
+            <td>住宿</td><td>亚朵酒店 · 03-09~10</td><td>¥ 892.00</td>
+            <td></td>
+            <td><span class="is is-r">↩ 追回</span></td>
+          </tr>
+          <tr class="row-recall" style="background:#F3E8FF">
+            <td colspan="6" style="padding:8px">
+              <div style="font-size:10px;font-weight:600;color:#7C3AED;margin-bottom:6px">▼ 第 4 项：缺少住宿水单 — 请上传</div>
+              <div style="display:flex;gap:8px;align-items:end">
+                <div style="flex:1">
+                  <div style="font-size:10px;color:var(--sub);margin-bottom:2px">上传住宿水单（入住明细）</div>
+                  <div class="upload-mini" onclick="s6f4(this)">📎 点击上传水单</div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </table>
+        </div>
+        <div class="total-row"><span>4 项合计 · 2 项待修正</span><span class="amt">¥ 2,550.00</span></div>
+      </div>
+      <div class="wb" style="padding-top:0">
+        <div class="al i">💡 第 1、3 项已通过不受影响。处理完第 2、4 项后点击提交。</div>
+        <div class="wa">
+          <button class="btn btn-p" onclick="s6c()">✓ 全部修正完毕，重新提交</button>
+        </div>
+      </div>
+    </div>
+  `,'Widget → 行内修正+上传');
+}
+
+window.s6f2=function(el){el.outerHTML='<span class="uploaded-tag">✅ 已上传：亚朵_重开发票.jpg</span>'}
+window.s6f4=function(el){el.outerHTML='<span class="uploaded-tag">✅ 已上传：亚朵_入住明细.jpg</span>'}
+
+window.s6c=async function(){
+  const d=readForm('f6');
+  msg('user','2 项已修正，重新提交');await typ(600);
+  suc('EXP-2026030801（修订版）','4 项已重新提交！');await D(200);
+  wid(`
+    <div class="wc"><div class="wb" style="padding:10px">
+      <div style="font-size:11px;font-weight:600;margin-bottom:6px">📜 审批记录</div>
+      <div class="tl">
+        <div class="ti"><div class="td g">✓</div><div class="tc"><div class="tt2">提交</div><div class="ts">03-15</div></div></div>
+        <div class="ti"><div class="td g">✓</div><div class="tc"><div class="tt2">李经理通过</div><div class="ts">03-18</div></div></div>
+        <div class="ti"><div class="td g">✓</div><div class="tc"><div class="tt2">财务通过</div><div class="ts">03-19</div></div></div>
+        <div class="ti"><div class="td pu">↩</div><div class="tc"><div class="tt2" style="color:#7C3AED">财务追回 2 项</div><div class="ts">03-22</div></div></div>
+        <div class="ti"><div class="td b">✎</div><div class="tc"><div class="tt2" style="color:var(--pri)">修正后重新提交</div><div class="ts">03-23 · 补发票+水单</div></div></div>
+        <div class="ti"><div class="td gr">…</div><div class="tc"><div class="tt2" style="color:var(--sub)">等待财务复审</div></div></div>
+      </div>
+    </div></div>
+  `,'回复节点');
+  msg('ai','第 2、4 项重新审核，第 1、3 项不变。预计 1 个工作日。');
+}
+
+// ══════════════════════════════════════
+// ══════════════════════════════════════
+// S7: Accumulated receipts — AI auto-groups into multiple reports
+// ══════════════════════════════════════
+async function S7(){
+  await D(300);msg('ai','你好！请上传报销单据，支持一次性上传多次出差/活动的票据，我会自动按行程分组 😊','回复节点');await D(300);
+  wid(`<div class="up" onclick="s7u()"><div class="ui">📎</div><div class="ut">点击批量上传发票 · 支持多选 · 可混合多次出差票据</div></div>`,'文件收集节点');
+}
+
+window.s7u=async function(){
+  $m.querySelectorAll('[onclick="s7u()"]').forEach(u=>u.closest('.message').remove());
+  msg('user','📎 上传了 8 张票据');
+  files([
+    ['出租车发票_20260310.jpg','1.0 MB'],
+    ['酒店发票_上海_20260310.jpg','1.8 MB'],
+    ['餐饮发票_上海_20260311.jpg','2.1 MB'],
+    ['高铁票_20260312.jpg','450 KB'],
+    ['出租车发票_20260315.jpg','980 KB'],
+    ['餐饮发票_全聚德_20260315.jpg','2.4 MB'],
+    ['火车票_天津_20260320.jpg','520 KB'],
+    ['酒店发票_天津_20260320.jpg','1.6 MB'],
+  ]);
+
+  await scan([
+    '第 1/8 张：出租车 03-10','第 2/8 张：酒店·上海 03-10',
+    '第 3/8 张：餐饮·上海 03-11','第 4/8 张：高铁票 03-12',
+    '第 5/8 张：出租车 03-15','第 6/8 张：餐饮 03-15',
+    '第 7/8 张：火车票·天津 03-20','第 8/8 张：酒店·天津 03-20',
+    'LLM 智能分组分析'
+  ],false);
+
+  msg('ai','8 张票据全部识别完成。根据<b>日期、地点和消费类型</b>，我将它们自动分成了 <b>3 张报销单</b>：','LLM节点 → 智能分组');
+  await D(200);
+
+  // Summary cards
+  wid(`
+    <div class="wc">
+      <div class="wh blue" style="font-size:12px">📊 智能分组结果 — 共 8 张票据 → 3 张报销单</div>
+      <div class="wb" style="padding:0">
+        <div style="display:flex;border-bottom:1px solid var(--bdr)">
+          <div style="flex:1;padding:10px 12px;border-right:1px solid var(--bdr)">
+            <div style="font-size:11px;color:var(--sub)">报销单 A</div>
+            <div style="font-size:13px;font-weight:600;margin:2px 0">上海出差</div>
+            <div style="font-size:11px;color:var(--sub)">03-10 ~ 03-12 · 4项</div>
+            <div style="font-size:15px;font-weight:700;color:var(--pri);margin-top:4px">¥ 2,186.00</div>
+          </div>
+          <div style="flex:1;padding:10px 12px;border-right:1px solid var(--bdr)">
+            <div style="font-size:11px;color:var(--sub)">报销单 B</div>
+            <div style="font-size:13px;font-weight:600;margin:2px 0">本地招待</div>
+            <div style="font-size:11px;color:var(--sub)">03-15 · 2项</div>
+            <div style="font-size:15px;font-weight:700;color:#7C3AED;margin-top:4px">¥ 933.00</div>
+          </div>
+          <div style="flex:1;padding:10px 12px">
+            <div style="font-size:11px;color:var(--sub)">报销单 C</div>
+            <div style="font-size:13px;font-weight:600;margin:2px 0">天津出差</div>
+            <div style="font-size:11px;color:var(--sub)">03-20 ~ 03-21 · 2项</div>
+            <div style="font-size:15px;font-weight:700;color:#0891B2;margin-top:4px">¥ 863.00</div>
+          </div>
+        </div>
+        <div class="total-row"><span>8 项合计</span><span class="amt">¥ 3,982.00</span></div>
+      </div>
+    </div>
+  `,'LLM节点 → 分组汇总');
+
+  await D(300);
+  msg('ai','以下是分组后的明细表格。你可以：<br>• 修改任意字段<br>• 通过<b>「所属报销单」下拉框</b>调整分组<br>• 补充缺失信息<br><br>确认无误后一键提交全部：','回复节点');
+  await D(200);
+
+  wid(`
+    <div class="wc" id="f7card">
+      <div class="wh blue" style="font-size:12px">📋 分组明细 — 可编辑 · 可调整分组</div>
+
+      <!-- Group A: Shanghai -->
+      <div class="group-hdr">🅰 报销单 A · 上海出差（03-10 ~ 03-12）<span class="gtag">4 项 · ¥2,186</span></div>
+      <div class="wb" style="padding:0">
+        <div style="overflow-x:auto">
+        <table class="etbl" id="f7">
+          <tr><th>#</th><th>类别</th><th>明细</th><th width="80">日期</th><th width="75">金额</th><th width="85">所属</th><th width="50">状态</th></tr>
+          <tr class="row-ok">
+            <td><span class="idx idx-ok">1</span></td>
+            <td><select><option selected>出租车</option><option>网约车</option></select></td>
+            <td><input value="首都机场 → 上海虹桥站（接驳）"></td>
+            <td><input type="date" value="2026-03-10"></td>
+            <td><input type="number" step="0.01" value="56.00"></td>
+            <td><select class="group-select" onchange="s7regroup()"><option selected style="color:var(--pri)">A·上海</option><option style="color:#7C3AED">B·本地</option><option style="color:#0891B2">C·天津</option></select></td>
+            <td><span class="is is-ok">✅</span></td>
+          </tr>
+          <tr class="row-ok">
+            <td><span class="idx idx-ok">2</span></td>
+            <td><select><option selected>住宿</option></select></td>
+            <td><input value="全季酒店（上海徐汇店）· 2晚"></td>
+            <td><input type="date" value="2026-03-10"></td>
+            <td><input type="number" step="0.01" value="876.00"></td>
+            <td><select class="group-select" onchange="s7regroup()"><option selected style="color:var(--pri)">A·上海</option><option style="color:#7C3AED">B·本地</option><option style="color:#0891B2">C·天津</option></select></td>
+            <td><span class="is is-ok">✅</span></td>
+          </tr>
+          <tr class="row-ok">
+            <td><span class="idx idx-ok">3</span></td>
+            <td><select><option selected>餐饮</option><option>招待</option></select></td>
+            <td><input value="小南国（徐家汇店）· 客户工作餐"></td>
+            <td><input type="date" value="2026-03-11"></td>
+            <td><input type="number" step="0.01" value="680.00"></td>
+            <td><select class="group-select" onchange="s7regroup()"><option selected style="color:var(--pri)">A·上海</option><option style="color:#7C3AED">B·本地</option><option style="color:#0891B2">C·天津</option></select></td>
+            <td><span class="is is-ok">✅</span></td>
+          </tr>
+          <tr class="row-ok">
+            <td><span class="idx idx-ok">4</span></td>
+            <td><select><option selected>高铁</option><option>火车</option><option>飞机</option></select></td>
+            <td><input value="上海虹桥 → 北京南 · G102 · 二等座"></td>
+            <td><input type="date" value="2026-03-12"></td>
+            <td><input type="number" step="0.01" value="574.00"></td>
+            <td><select class="group-select" onchange="s7regroup()"><option selected style="color:var(--pri)">A·上海</option><option style="color:#7C3AED">B·本地</option><option style="color:#0891B2">C·天津</option></select></td>
+            <td><span class="is is-ok">✅</span></td>
+          </tr>
+        </table>
+        </div>
+      </div>
+      <div class="group-sub"><span>报销单 A 小计（4 项）</span><span class="amt">¥ 2,186.00</span></div>
+
+      <!-- Group B: Local -->
+      <div class="group-hdr g2">🅱 报销单 B · 本地客户招待（03-15）<span class="gtag">2 项 · ¥933</span></div>
+      <div class="wb" style="padding:0">
+        <div style="overflow-x:auto">
+        <table class="etbl">
+          <tr><th>#</th><th>类别</th><th>明细</th><th width="80">日期</th><th width="75">金额</th><th width="85">所属</th><th width="50">状态</th></tr>
+          <tr class="row-ok">
+            <td><span class="idx" style="background:#F3E8FF;color:#7C3AED">5</span></td>
+            <td><select><option selected>出租车</option><option>网约车</option></select></td>
+            <td><input value="公司 → 全聚德（中关村店）"></td>
+            <td><input type="date" value="2026-03-15"></td>
+            <td><input type="number" step="0.01" value="35.00"></td>
+            <td><select class="group-select" onchange="s7regroup()"><option style="color:var(--pri)">A·上海</option><option selected style="color:#7C3AED">B·本地</option><option style="color:#0891B2">C·天津</option></select></td>
+            <td><span class="is is-ok">✅</span></td>
+          </tr>
+          <tr class="row-warn">
+            <td><span class="idx idx-w">6</span></td>
+            <td><select><option selected>餐饮·招待</option><option>餐饮</option></select></td>
+            <td><input value="全聚德（中关村店）"></td>
+            <td><input type="date" value="2026-03-15"></td>
+            <td><input type="number" step="0.01" value="898.00"></td>
+            <td><select class="group-select" onchange="s7regroup()"><option style="color:var(--pri)">A·上海</option><option selected style="color:#7C3AED">B·本地</option><option style="color:#0891B2">C·天津</option></select></td>
+            <td><span class="is is-w">⏳ 补充</span></td>
+          </tr>
+          <tr class="row-warn" style="background:var(--warn-bg)">
+            <td colspan="7" style="padding:6px 8px 10px">
+              <div style="font-size:10px;font-weight:600;color:#7A4500;margin-bottom:5px">▼ 第 6 项需补充</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <div style="flex:1;min-width:110px"><div style="font-size:10px;color:var(--sub);margin-bottom:2px">用餐事由</div>
+                  <select class="need"><option value="">— 请选择 —</option><option>客户招待</option><option>团队聚餐</option><option>商务洽谈</option></select></div>
+                <div style="flex:1;min-width:90px"><div style="font-size:10px;color:var(--sub);margin-bottom:2px">人数</div>
+                  <select class="need"><option value="">—</option><option>2人</option><option>3-4人</option><option>5-6人</option><option>7+</option></select></div>
+                <div style="flex:1;min-width:130px"><div style="font-size:10px;color:var(--sub);margin-bottom:2px">客户公司</div>
+                  <input class="need" placeholder="非招待填"无""></div>
+              </div>
+            </td>
+          </tr>
+        </table>
+        </div>
+      </div>
+      <div class="group-sub"><span>报销单 B 小计（2 项）</span><span class="amt" style="color:#7C3AED">¥ 933.00</span></div>
+
+      <!-- Group C: Tianjin -->
+      <div class="group-hdr g3">🅲 报销单 C · 天津出差（03-20 ~ 03-21）<span class="gtag">2 项 · ¥863</span></div>
+      <div class="wb" style="padding:0">
+        <div style="overflow-x:auto">
+        <table class="etbl">
+          <tr><th>#</th><th>类别</th><th>明细</th><th width="80">日期</th><th width="75">金额</th><th width="85">所属</th><th width="50">状态</th></tr>
+          <tr class="row-ok">
+            <td><span class="idx" style="background:#E0F7FA;color:#0891B2">7</span></td>
+            <td><select><option selected>火车</option><option>高铁</option></select></td>
+            <td><input value="北京南 → 天津 · C2551 · 一等座"></td>
+            <td><input type="date" value="2026-03-20"></td>
+            <td><input type="number" step="0.01" value="93.00"></td>
+            <td><select class="group-select" onchange="s7regroup()"><option style="color:var(--pri)">A·上海</option><option style="color:#7C3AED">B·本地</option><option selected style="color:#0891B2">C·天津</option></select></td>
+            <td><span class="is is-ok">✅</span></td>
+          </tr>
+          <tr class="row-ok">
+            <td><span class="idx" style="background:#E0F7FA;color:#0891B2">8</span></td>
+            <td><select><option selected>住宿</option></select></td>
+            <td><input value="如家酒店（天津站店）· 1晚"></td>
+            <td><input type="date" value="2026-03-20"></td>
+            <td><input type="number" step="0.01" value="770.00"></td>
+            <td><select class="group-select" onchange="s7regroup()"><option style="color:var(--pri)">A·上海</option><option style="color:#7C3AED">B·本地</option><option selected style="color:#0891B2">C·天津</option></select></td>
+            <td><span class="is is-ok">✅</span></td>
+          </tr>
+        </table>
+        </div>
+      </div>
+      <div class="group-sub"><span>报销单 C 小计（2 项）</span><span class="amt" style="color:#0891B2">¥ 863.00</span></div>
+
+      <div class="total-row" style="border-top:2px solid var(--bdr)"><span><b>3 张报销单 · 8 项合计</b></span><span class="amt">¥ 3,982.00</span></div>
+
+      <div class="wb" style="padding-top:0">
+        <div class="al i">
+          💡 AI 根据日期和地点自动分组。如果分组有误，可通过每行的「所属」下拉框调整。<br>
+          例如：把第 4 项（高铁返程票）从 A 拖到 C，只需改下拉选项。
+        </div>
+        <div class="wa">
+          <button class="btn btn-p" onclick="s7c()">✓ 全部确认，一次性提交 3 张报销单</button>
+          <button class="btn btn-o" onclick="s7one()">先提交报销单 A</button>
+        </div>
+      </div>
+    </div>
+  `,'Widget节点 → 分组可编辑表单');
+}
+
+window.s7regroup=function(){
+  msg('ai','<span style="font-size:12px">💡 分组已调整。提交时将按最新分组生成报销单。</span>','LLM节点 → 重新分组');
+}
+
+window.s7c=async function(){
+  msg('user','全部确认，提交 3 张报销单');await typ(800);
+  wid(`
+    <div class="wc">
+      <div class="wh green" style="font-size:12px">✅ 3 张报销单已全部提交</div>
+      <div class="wb" style="padding:0">
+        <table class="etbl">
+          <tr><th>报销单</th><th>事由</th><th>项数</th><th>金额</th><th>编号</th><th>审批路径</th></tr>
+          <tr><td style="font-weight:600;color:var(--pri)">A</td><td>上海出差</td><td>4 项</td><td>¥ 2,186</td><td>EXP-2026032301</td><td>张明→李经理→财务</td></tr>
+          <tr><td style="font-weight:600;color:#7C3AED">B</td><td>本地招待</td><td>2 项</td><td>¥ 933</td><td>EXP-2026032302</td><td>张明→李经理→王总监→财务</td></tr>
+          <tr><td style="font-weight:600;color:#0891B2">C</td><td>天津出差</td><td>2 项</td><td>¥ 863</td><td>EXP-2026032303</td><td>张明→李经理→财务</td></tr>
+        </table>
+        <div class="total-row"><span>合计 3 单 · 8 项</span><span class="amt">¥ 3,982.00</span></div>
+      </div>
+    </div>
+  `,'工具节点 → 批量提交ERP');
+  await D(200);
+  msg('ai','3 张报销单已分别进入各自的审批流程。报销单 B 含招待费 > ¥500，自动抄送总监。<br><br>随时输入任一单号查询进度。','回复节点');
+}
+
+window.s7one=async function(){
+  msg('user','先提交报销单 A');await typ(500);
+  suc('EXP-2026032301','报销单 A（上海出差）已提交！');
+  await D(200);
+  msg('ai','报销单 A 已提交（4 项 · ¥2,186）。<br>报销单 B、C 暂未提交，你可以继续修改后再提交。','回复节点');
+}
+
+// ══════════════════════════════════════
+function sw(n){$m.innerHTML='';di();
+document.querySelectorAll('.si').forEach((e,i)=>e.classList.toggle('active',i+1===n));
+[null,S1,S2,S3,S4,S5,S6,S7][n]()}
+sw(1);
+
+function openMindmap(){document.getElementById('mmModal').style.display='block';document.getElementById('mmFrame').src='mindmap.html'}
+function closeMindmap(){document.getElementById('mmModal').style.display='none';document.getElementById('mmFrame').src=''}
+document.getElementById('mmModal').addEventListener('click',function(e){if(e.target===this)closeMindmap()});
+</script>
+</body>
+</html>
